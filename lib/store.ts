@@ -107,7 +107,16 @@ const apiJson = async <T,>(url: string, init?: RequestInit): Promise<T | null> =
     },
   });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    let details = '';
+    try {
+      details = JSON.stringify(await response.json());
+    } catch {
+      details = await response.text().catch(() => '');
+    }
+    console.error(`API request failed: ${response.status} ${url}`, details);
+    return null;
+  }
   return response.json();
 };
 
@@ -209,7 +218,12 @@ export const useStore = create<AppState>((set, get) => ({
     saveStateToStorage('ptks', ptks);
     set({ ptks });
     apiJson<{ ptk: PTK }>('/api/ptks', { method: 'POST', body: JSON.stringify(newPtk) }).then((data) => {
-      if (!data) return;
+      if (!data) {
+        const rolledBack = get().ptks.filter((item) => item.id !== id);
+        saveStateToStorage('ptks', rolledBack);
+        set({ ptks: rolledBack });
+        return;
+      }
       const synced = get().ptks.map((item) => item.id === id ? data.ptk : item);
       saveStateToStorage('ptks', synced);
       set({ ptks: synced });
@@ -220,7 +234,10 @@ export const useStore = create<AppState>((set, get) => ({
     saveStateToStorage('ptks', ptks);
     set({ ptks });
     apiJson<{ ptk: PTK }>(`/api/ptks/${id}`, { method: 'PATCH', body: JSON.stringify(ptkUpdate) }).then((data) => {
-      if (!data) return;
+      if (!data) {
+        get().hydrateFromServer();
+        return;
+      }
       const synced = get().ptks.map((item) => item.id === id ? data.ptk : item);
       saveStateToStorage('ptks', synced);
       set({ ptks: synced });
@@ -230,7 +247,9 @@ export const useStore = create<AppState>((set, get) => ({
     const ptks = get().ptks.filter(p => p.id !== id);
     saveStateToStorage('ptks', ptks);
     set({ ptks });
-    apiJson(`/api/ptks/${id}`, { method: 'DELETE' });
+    apiJson(`/api/ptks/${id}`, { method: 'DELETE' }).then((data) => {
+      if (!data) get().hydrateFromServer();
+    });
   },
   
   addCandidate: (candidate) => {
@@ -240,7 +259,12 @@ export const useStore = create<AppState>((set, get) => ({
     saveStateToStorage('candidates', candidates);
     set({ candidates });
     apiJson<{ candidate: Candidate }>('/api/candidates', { method: 'POST', body: JSON.stringify(newCandidate) }).then((data) => {
-      if (!data) return;
+      if (!data) {
+        const rolledBack = get().candidates.filter((item) => item.id !== id);
+        saveStateToStorage('candidates', rolledBack);
+        set({ candidates: rolledBack });
+        return;
+      }
       const synced = get().candidates.map((item) => item.id === id ? data.candidate : item);
       saveStateToStorage('candidates', synced);
       set({ candidates: synced });
@@ -251,7 +275,10 @@ export const useStore = create<AppState>((set, get) => ({
     saveStateToStorage('candidates', candidates);
     set({ candidates });
     apiJson<{ candidate: Candidate }>(`/api/candidates/${id}`, { method: 'PATCH', body: JSON.stringify(candidateUpdate) }).then((data) => {
-      if (!data) return;
+      if (!data) {
+        get().hydrateFromServer();
+        return;
+      }
       const synced = get().candidates.map((item) => item.id === id ? data.candidate : item);
       saveStateToStorage('candidates', synced);
       set({ candidates: synced });
@@ -261,7 +288,9 @@ export const useStore = create<AppState>((set, get) => ({
     const candidates = get().candidates.filter(c => c.id !== id);
     saveStateToStorage('candidates', candidates);
     set({ candidates });
-    apiJson(`/api/candidates/${id}`, { method: 'DELETE' });
+    apiJson(`/api/candidates/${id}`, { method: 'DELETE' }).then((data) => {
+      if (!data) get().hydrateFromServer();
+    });
   },
   importExcelData: (importedPtks, importedCandidates) => {
     const newPtks = importedPtks.map(p => ({...p, id: generateId(), created_at: new Date().toISOString()}));
@@ -292,7 +321,12 @@ export const useStore = create<AppState>((set, get) => ({
       method: 'POST',
       body: JSON.stringify({ type, name, status: 'Active' }),
     }).then((data) => {
-      if (!data) return;
+      if (!data) {
+        const rolledBack = get()[type].filter((item) => item.id !== newItem.id);
+        saveStateToStorage(`master_${type}`, rolledBack);
+        set({ [type]: rolledBack });
+        return;
+      }
       const synced = get()[type].map((item) => item.id === newItem.id ? data.item : item);
       saveStateToStorage(`master_${type}`, synced);
       set({ [type]: synced });
@@ -306,7 +340,10 @@ export const useStore = create<AppState>((set, get) => ({
       method: 'PATCH',
       body: JSON.stringify({ type, name, status }),
     }).then((data) => {
-      if (!data) return;
+      if (!data) {
+        get().hydrateFromServer();
+        return;
+      }
       const synced = get()[type].map((item) => item.id === id ? data.item : item);
       saveStateToStorage(`master_${type}`, synced);
       set({ [type]: synced });
@@ -316,7 +353,9 @@ export const useStore = create<AppState>((set, get) => ({
     const items = get()[type].filter(i => i.id !== id);
     saveStateToStorage(`master_${type}`, items);
     set({ [type]: items });
-    apiJson(`/api/master-data/${id}`, { method: 'DELETE' });
+    apiJson(`/api/master-data/${id}`, { method: 'DELETE' }).then((data) => {
+      if (!data) get().hydrateFromServer();
+    });
   }
 }));
 

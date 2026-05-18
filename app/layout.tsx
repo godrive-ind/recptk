@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Sidebar } from '@/components/layout/sidebar';
+import { StoreHydrator } from '@/components/store-hydrator';
 
 export const metadata: Metadata = {
   title: 'Sistem Rekrutmen PTK',
@@ -11,6 +12,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="id">
       <body className="bg-[#F5F5F7] text-slate-900 font-sans antialiased" suppressHydrationWarning>
+        <StoreHydrator />
         <div className="flex min-h-screen">
           <Sidebar />
           <main className="flex-1 w-full md:pl-64 flex flex-col min-h-screen transition-all duration-300">
