@@ -2,19 +2,22 @@
 
 ## Required Services
 
-Use a managed PostgreSQL database such as Vercel Postgres, Neon, Supabase Postgres, or Railway Postgres.
+Use a managed PostgreSQL database such as Supabase Postgres, Vercel Postgres, Neon, or Railway Postgres.
 
 ## Required Environment Variables
 
 Set these in Vercel Project Settings -> Environment Variables:
 
 ```bash
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
+DATABASE_URL="postgresql://postgres.PROJECT_REF:ENCODED_PASSWORD@POOLER_HOST:6543/postgres?sslmode=require&pgbouncer=true"
+DIRECT_URL="postgresql://postgres.PROJECT_REF:ENCODED_PASSWORD@POOLER_HOST:5432/postgres?sslmode=require"
 ADMIN_USERNAME="admin_hrd"
 ADMIN_EMAIL="admin@example.com"
 ADMIN_PASSWORD="replace-with-a-long-random-password"
 APP_URL="https://your-production-domain"
 ```
+
+For Supabase, prefer pooler URLs over the direct `db.PROJECT_REF.supabase.co` hostname when deploying from IPv4-only networks. URL-encode special characters in the password; for example, `@` must be written as `%40`.
 
 `ADMIN_PASSWORD` is used only by `npm run db:seed` to create or rotate the first admin account. Do not reuse the old prototype password.
 
